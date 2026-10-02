@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>작심며칠 - AI 기반 맞춤형 시험 공부 플래너</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Gowun Batang & Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#FDFBF7',   /* Deep Cream / Background Base */
+                            100: '#F7F3E9',  /* Soft Warm Ivory */
+                            200: '#EFE6D5',  /* Soft Beige */
+                            300: '#E2D3B7',  /* Warm Sand */
+                            400: '#C8B28F',  /* Muted Gold/Muted Beige */
+                            500: '#A68A64',  /* Cozy Warm Brown */
+                            600: '#8A6E4B',  /* Deep Wood */
+                            700: '#6B5336',
+                            800: '#4D3B24',
+                            900: '#322515',
+                        },
+                        ivory: {
+                            light: '#FAF8F5',
+                            card: '#FFFDF9',
+                            border: '#E8DFD1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        serif: ['"Gowun Batang"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            color: #322515;
+            font-family: 'Noto Sans KR', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-serif-custom {
+            font-family: 'Gowun Batang', serif;
+        }
+        /* Custom Scrollbar for sleek beige feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F7F3E9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D8C8B0;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A68A64;
+        }
+        .glass-card {
+            background: rgba(255, 253, 249, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E8DFD1;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-brand-200 selection:text-brand-900">
+
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-ivory-card border border-ivory-border rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative animate-fade-in text-center">
+            <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <span class="inline-block px-3 py-1 bg-brand-100 text-brand-700 font-medium text-xs rounded-full mb-2">시험 D-Day 맞춤 솔루션</span>
+            <h2 class="text-2xl md:text-3xl font-serif-custom font-bold text-brand-900 mb-3">작심삼일? 아니, <span class="text-brand-600">작심며칠</span>!</h2>
+            <p class="text-gray-600 text-sm leading-relaxed mb-6">
+                복잡한 공부 계획 세우기 힘드셨죠?<br>
+                시험이 며칠 남지 않은 지금, 학원·과외 일정을 뺀 <strong>진짜 순수 가용 시간</strong>을 계산하고 과목별 난이도와 암기/문제풀이 특성에 맞게 딱 필요한 만큼만 AI가 완벽한 공부 계획을 만들어 드립니다.
+            </p>
+
+            <div class="grid grid-cols-3 gap-3 mb-6 text-left text-xs bg-brand-50 p-3 rounded-xl border border-brand-100">
+                <div class="flex flex-col items-center text-center p-2">
+                    <i class="fa-solid fa-calendar-minus text-brand-500 text-lg mb-1"></i>
+                    <span class="font-semibold text-brand-800">1. 고정일정 빼기</span>
+                    <span class="text-gray-500 text-[10px]">학원·소모시간 차감</span>
+                </div>
+                <div class="flex flex-col items-center text-center p-2">
+                    <i class="fa-solid fa-brain text-brand-500 text-lg mb-1"></i>
+                    <span class="font-semibold text-brand-800">2. 과목 특성 분석</span>
+                    <span class="text-gray-500 text-[10px]">암기 vs 문제풀이</span>
+                </div>
+                <div class="flex flex-col items-center text-center p-2">
+                    <i class="fa-solid fa-stopwatch text-brand-500 text-lg mb-1"></i>
+                    <span class="font-semibold text-brand-800">3. 순공 타이머</span>
+                    <span class="text-gray-500 text-[10px]">실시간 실천 측정</span>
+                </div>
+            </div>
+
+            <button id="closeWelcomeBtn" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl shadow-md transition-all transform active:scale-98 flex items-center justify-center gap-2">
+                <span>작심며칠 시작하기</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 bg-brand-50/90 backdrop-blur-md border-b border-ivory-border px-4 lg:px-8 py-3 transition-all">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center font-bold text-xl shadow-sm border border-brand-300">
+                    며칠
+                </div>
+                <div>
+                    <h1 class="font-serif-custom font-bold text-xl text-brand-900 tracking-tight">작심며칠</h1>
+                    <p class="text-[11px] text-brand-600 font-medium">딱 필요한 만큼, AI 맞춤 시험 플래너</p>
+                </div>
+            </div>
+
+            <!-- Header Right: Ambient Music Controller & Reset -->
+            <div class="flex items-center gap-3">
+                <!-- Sound Player Dropdown Trigger -->
+                <div class="relative">
+                    <button id="soundMenuBtn" class="flex items-center gap-2 px-3.5 py-2 bg-ivory-card border border-ivory-border rounded-xl hover:bg-brand-100 text-brand-800 text-xs font-medium shadow-sm transition-all">
+                        <i id="soundIcon" class="fa-solid fa-volume-low text-brand-600"></i>
+                        <span id="currentSoundLabel" class="hidden sm:inline">백그라운드 소음</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                    </button>
+
+                    <!-- Ambient Sound Popup Menu -->
+                    <div id="soundDropdown" class="hidden absolute right-0 mt-2 w-56 bg-ivory-card border border-ivory-border rounded-2xl shadow-xl p-3 z-50 animate-fade-in">
+                        <div class="text-xs font-semibold text-brand-800 border-b border-brand-100 pb-2 mb-2 flex justify-between items-center">
+                            <span>ASMR 집중 사운드</span>
+                            <span id="soundStatus" class="text-[10px] text-brand-500 font-normal">OFF</span>
+                        </div>
+                        <div class="space-y-1">
+                            <button data-sound="rain" class="sound-option w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-brand-100 text-gray-700">
+                                <span><i class="fa-solid fa-cloud-rain w-5 text-brand-500"></i> 잔잔한 빗소리</span>
+                                <i class="fa-solid fa-play text-[10px] text-gray-300"></i>
+                            </button>
+                            <button data-sound="fire" class="sound-option w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-brand-100 text-gray-700">
+                                <span><i class="fa-solid fa-fire w-5 text-amber-600"></i> 따뜻한 장작소리</span>
+                                <i class="fa-solid fa-play text-[10px] text-gray-300"></i>
+                            </button>
+                            <button data-sound="white" class="sound-option w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-brand-100 text-gray-700">
+                                <span><i class="fa-solid fa-wind w-5 text-gray-400"></i> 집중 백색소음</span>
+                                <i class="fa-solid fa-play text-[10px] text-gray-300"></i>
+                            </button>
+                            <button data-sound="cafe" class="sound-option w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-brand-100 text-gray-700">
+                                <span><i class="fa-solid fa-mug-hot w-5 text-brand-600"></i> 아늑한 카페 소리</span>
+                                <i class="fa-solid fa-play text-[10px] text-gray-300"></i>
+                            </button>
+                            <button data-sound="music" class="sound-option w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-brand-100 text-gray-700">
+                                <span><i class="fa-solid fa-music w-5 text-purple-500"></i> 잔잔한 로파이 음악</span>
+                                <i class="fa-solid fa-play text-[10px] text-gray-300"></i>
+                            </button>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-brand-100 flex items-center gap-2">
+                            <i class="fa-solid fa-volume-xmark text-xs text-gray-400"></i>
+                            <input id="volumeControl" type="range" min="0" max="1" step="0.05" value="0.3" class="w-full accent-brand-500 h-1 bg-brand-200 rounded-lg">
+                            <button id="soundOffBtn" class="text-[10px] px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 font-medium">끄기</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Plan Primary Action Button -->
+                <button id="openWizardBtn" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 transform active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>계획 생성하기</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
+
+        <!-- Daily Motivation Quote Banner -->
+        <section class="glass-card rounded-2xl p-5 md:p-6 shadow-sm border border-ivory-border relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 text-brand-100/60 text-9xl font-serif-custom select-none pointer-events-none">
+                “
+            </div>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                <div class="space-y-1 max-w-3xl">
+                    <div class="flex items-center gap-2 text-xs font-semibold text-brand-600">
+                        <i class="fa-solid fa-quote-left"></i>
+                        <span>오늘의 동기부여 명언</span>
+                    </div>
+                    <p id="dailyQuoteText" class="text-base md:text-lg font-serif-custom font-bold text-brand-900 leading-snug">
+                        "작심삼일도 열 번 반복하면 한 달이 된다. 며칠 남지 않았을 때가 진짜 시동을 걸 때다."
+                    </p>
+                    <p id="dailyQuoteAuthor" class="text-xs text-brand-600/80 font-medium">— 작심며칠 학습 응원단</p>
+                </div>
+                <button id="refreshQuoteBtn" class="px-3 py-1.5 bg-brand-100/80 hover:bg-brand-200 text-brand-800 text-xs rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap self-end md:self-center">
+                    <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                    <span>다른 명언 보기</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Dashboard View (Calendar & Planner & Timer) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left 2 Cols: Plan & Daily Checklist -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Plan Header Status -->
+                <div class="flex items-center justify-between bg-ivory-card border border-ivory-border p-4 rounded-2xl shadow-sm">
+                    <div>
+                        <span class="text-xs text-gray-500 font-medium">나의 시험 대비 플랜</span>
+                        <h2 id="planTitle" class="text-lg font-bold text-brand-900 font-serif-custom">등록된 공부 계획이 없습니다</h2>
+                    </div>
+                    <div id="planSummaryBadge" class="hidden flex items-center gap-2">
+                        <span id="dDayTag" class="px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full">D-7</span>
+                        <button id="resetPlanBtn" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs rounded-lg transition-colors border border-red-200">
+                            계획 초기화
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty State Prompt when no plan generated -->
+                <div id="emptyPlanState" class="glass-card rounded-2xl p-10 text-center space-y-4 border border-dashed border-brand-300">
+                    <div class="w-16 h-16 bg-brand-100 text-brand-500 rounded-full flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-brand-900">남은 시험 기간, 효율적으로 시작하세요!</h3>
+                        <p class="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                            오른쪽 위의 [계획 생성하기] 버튼을 누르면 학원/과외 시간은 알아서 빼고, 암기과목과 문제풀이 과목을 알아서 배분해 드립니다.
+                        </p>
+                    </div>
+                    <button id="emptyStateWizardBtn" class="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold shadow transition-all inline-flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>지금 1분만에 계획 생성하기</span>
+                    </button>
+                </div>
+
+                <!-- Generated Plan Display Area (Hidden initially) -->
+                <div id="activePlanState" class="hidden space-y-6">
+                    
+                    <!-- Day Navigation Tabs -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1" id="dayTabsContainer">
+                        <!-- Dynamic Day Tabs -->
+                    </div>
+
+                    <!-- Selected Day Task Checklist -->
+                    <div class="bg-ivory-card border border-ivory-border rounded-2xl p-5 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-brand-100 pb-3">
+                            <div>
+                                <h3 id="currentDayTitle" class="font-bold text-brand-900 font-serif-custom text-base">DAY 1 학습 계획</h3>
+                                <p id="currentDaySub" class="text-xs text-gray-500">목표 공부 시간: 약 3시간 30분</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-brand-700">오늘 달성률</span>
+                                <span id="dayProgressPercent" class="font-bold text-brand-600 text-sm">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-brand-100 h-2.5 rounded-full overflow-hidden">
+                            <div id="dayProgressBar" class="bg-brand-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+
+                        <!-- Task Items Container -->
+                        <div id="taskList" class="space-y-3 pt-2">
+                            <!-- Tasks populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- AI Planner Strategy Advice Card -->
+                    <div class="bg-brand-100/60 border border-brand-200 rounded-2xl p-4 text-xs space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-brand-800">
+                            <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                            <span>AI 맞춤 학습 전략 리포트</span>
+                        </div>
+                        <p id="aiAdviceContent" class="text-brand-900 leading-relaxed">
+                            역사/한국사 등 암기 과목은 취침 전 30분 분산 복습이 효과적입니다. 수학 문제풀이 스케줄은 연속 가용시간이 가장 긴 날 집중 배치되었습니다.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Col: Pure Study Timer & Quick Stats -->
+            <div class="space-y-6">
+                
+                <!-- Stopwatch & Pomodoro Timer Card -->
+                <div class="bg-ivory-card border border-ivory-border rounded-2xl p-6 shadow-sm text-center space-y-5">
+                    <div class="flex items-center justify-between border-b border-brand-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-stopwatch text-brand-600"></i>
+                            <span class="font-bold text-brand-900 text-sm">순공 시간 타이머</span>
+                        </div>
+                        <div class="flex bg-brand-100 p-0.5 rounded-lg text-[11px]">
+                            <button id="timerModeStopwatch" class="px-2.5 py-1 rounded-md font-semibold bg-white text-brand-800 shadow-xs">스톱워치</button>
+                            <button id="timerModePomodoro" class="px-2.5 py-1 rounded-md font-semibold text-gray-500 hover:text-brand-800">25분 뽀모도로</button>
+                        </div>
+                    </div>
+
+                    <!-- Target Subject Selector for Timer -->
+                    <div>
+                        <label class="block text-[11px] text-left text-gray-500 mb-1 font-medium">지금 공부 중인 과목</label>
+                        <select id="timerSubjectSelect" class="w-full bg-brand-50 border border-ivory-border rounded-xl px-3 py-2 text-xs font-semibold text-brand-900 focus:outline-none focus:border-brand-400">
+                            <option value="자율 학습">자율 학습 / 기타</option>
+                        </select>
+                    </div>
+
+                    <!-- Time Display -->
+                    <div class="py-4 bg-brand-50 rounded-2xl border border-brand-100/80">
+                        <span id="timerDisplay" class="font-mono text-4xl md:text-5xl font-bold text-brand-900 tracking-wider">
+                            00:00:00
+                        </span>
+                        <p id="timerSubLabel" class="text-[11px] text-brand-600 mt-2 font-medium">집중 타이머 정지 중</p>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="flex items-center justify-center gap-3">
+                        <button id="startTimerBtn" class="flex-1 py-3 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>공부 시작</span>
+                        </button>
+                        <button id="pauseTimerBtn" class="hidden flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-pause"></i>
+                            <span>일시 정지</span>
+                        </button>
+                        <button id="resetTimerBtn" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-xl transition-all">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
+
+                    <!-- Today Cumulative Time Summary -->
+                    <div class="pt-3 border-t border-brand-100 flex items-center justify-between text-xs">
+                        <span class="text-gray-500">오늘의 누적 순공 시간</span>
+                        <span id="todayTotalTime" class="font-bold text-brand-700 text-sm font-mono">0시간 0분</span>
+                    </div>
+                </div>
+
+                <!-- Subject-wise Accumulated Time Card -->
+                <div class="bg-ivory-card border border-ivory-border rounded-2xl p-5 shadow-sm space-y-3">
+                    <h3 class="font-bold text-brand-900 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-pie text-brand-500"></i>
+                        <span>과목별 누적 순공 리포트</span>
+                    </h3>
+                    <div id="subjectTimeList" class="space-y-2 text-xs">
+                        <p class="text-gray-400 text-center py-4">기록된 순공 시간이 아직 없습니다.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Plan Creation Wizard Modal (Step-by-Step) -->
+    <div id="wizardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-ivory-card border border-ivory-border rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative my-8 animate-fade-in max-h-[90vh] flex flex-col">
+            
+            <!-- Modal Header & Wizard Progress -->
+            <div class="flex items-center justify-between border-b border-brand-100 pb-4 mb-6">
+                <div>
+                    <span class="text-[11px] font-bold text-brand-500 tracking-wider uppercase">AI PLAN WIZARD</span>
+                    <h3 class="text-lg md:text-xl font-bold font-serif-custom text-brand-900">맞춤형 시험 공부 계획 생성</h3>
+                </div>
+                <button id="closeWizardBtn" class="w-8 h-8 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Step Indicator Bar -->
+            <div class="flex items-center justify-between mb-6 px-2">
+                <div class="step-indicator flex flex-col items-center gap-1" data-step="1">
+                    <div class="step-circle w-8 h-8 rounded-full bg-brand-500 text-white font-bold text-xs flex items-center justify-center">1</div>
+                    <span class="text-[10px] text-brand-800 font-medium">고정 일정</span>
+                </div>
+                <div class="h-0.5 flex-1 bg-brand-200 mx-2"></div>
+                <div class="step-indicator flex flex-col items-center gap-1" data-step="2">
+                    <div class="step-circle w-8 h-8 rounded-full bg-brand-200 text-brand-700 font-bold text-xs flex items-center justify-center">2</div>
+                    <span class="text-[10px] text-gray-400 font-medium">시험 과목</span>
+                </div>
+                <div class="h-0.5 flex-1 bg-brand-200 mx-2"></div>
+                <div class="step-indicator flex flex-col items-center gap-1" data-step="3">
+                    <div class="step-circle w-8 h-8 rounded-full bg-brand-200 text-brand-700 font-bold text-xs flex items-center justify-center">3</div>
+                    <span class="text-[10px] text-gray-400 font-medium">난이도 & 스타일</span>
+                </div>
+                <div class="h-0.5 flex-1 bg-brand-200 mx-2"></div>
+                <div class="step-indicator flex flex-col items-center gap-1" data-step="4">
+                    <div class="step-circle w-8 h-8 rounded-full bg-brand-200 text-brand-700 font-bold text-xs flex items-center justify-center">4</div>
+                    <span class="text-[10px] text-gray-400 font-medium">AI 계획 완성</span>
+                </div>
+            </div>
+
+            <!-- Wizard Form Steps Content Container -->
+            <div class="flex-1 overflow-y-auto pr-1 space-y-6">
+
+                <!-- STEP 1: Fixed Schedule Input -->
+                <div id="wizardStep1" class="wizard-step-content space-y-4">
+                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-100">
+                        <h4 class="font-bold text-sm text-brand-900 mb-1">학원, 과외, 학교 외 고정 일정 소모 시간</h4>
+                        <p class="text-xs text-gray-600">시험공부에 몰입할 수 없는 요일별 고정 소모 시간을 입력해주세요. AI가 빼고 진짜 순수 공부 시간만 계산합니다.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-brand-800 mb-1">시험까지 남은 기간 (일)</label>
+                            <select id="inputExamDays" class="w-full bg-white border border-ivory-border rounded-xl px-3 py-2 text-xs font-medium focus:border-brand-500 focus:outline-none">
+                                <option value="3">3일 남음 (작심삼일 직전! 초집중)</option>
+                                <option value="5">5일 남음 (벼락치기 완성)</option>
+                                <option value="7" selected>7일 남음 (1주일 집중 플랜)</option>
+                                <option value="10">10일 남음 (여유있는 대비)</option>
+                                <option value="14">14일 남음 (2주일 차근차근)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-brand-800 mb-1">평일 하루 평균 고정 소모시간</label>
+                            <select id="inputWeekdayBusy" class="w-full bg-white border border-ivory-border rounded-xl px-3 py-2 text-xs font-medium focus:border-brand-500 focus:outline-none">
+                                <option value="2">2시간 (학교 후 학원 1개)</option>
+                                <option value="4" selected>4시간 (학원 2개 또는 과외)</option>
+                                <option value="6">6시간 이상 (학원/숙제 많음)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <label class="block text-xs font-semibold text-brand-800">주말/휴일 집중 가능 시간</label>
+                        <div class="flex items-center gap-4 text-xs text-gray-700 bg-white p-3 border border-ivory-border rounded-xl">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="weekendAvailability" value="full" checked class="accent-brand-500">
+                                <span>주말 하루 8시간 이상 전념 가능</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="weekendAvailability" value="half" class="accent-brand-500">
+                                <span>주말도 학원 등으로 4~5시간만 가능</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Subject & Exam Scope -->
+                <div id="wizardStep2" class="wizard-step-content hidden space-y-4">
+                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-100 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-brand-900 mb-1">시험 볼 과목 및 예상 학습량</h4>
+                            <p class="text-xs text-gray-600">이번 시험에 볼 과목들을 선택하고 필요한 1회 단위 학습 시간을 설정하세요.</p>
+                        </div>
+                        <button id="addSubjectBtn" class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
+                            <i class="fa-solid fa-plus text-[10px]"></i> 과목 추가
+                        </button>
+                    </div>
+
+                    <div id="subjectInputList" class="space-y-3">
+                        <!-- Default Subject Items initialized by JS -->
+                    </div>
+                </div>
+
+                <!-- STEP 3: Skill Level & Learning Style Analysis -->
+                <div id="wizardStep3" class="wizard-step-content hidden space-y-4">
+                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-100">
+                        <h4 class="font-bold text-sm text-brand-900 mb-1">과목별 난이도 & 학습 스타일 분석</h4>
+                        <p class="text-xs text-gray-600">암기형(역사/탐구)은 며칠에 나누어 복습을 배치하고, 문제풀이형(수학/이과)은 한 번에 몰아서 할 수 있도록 AI가 스케줄링합니다.</p>
+                    </div>
+
+                    <div id="subjectStyleList" class="space-y-3">
+                        <!-- Dynamically filled based on Step 2 subjects -->
+                    </div>
+                </div>
+
+                <!-- STEP 4: AI Plan Generation Loading & Preview -->
+                <div id="wizardStep4" class="wizard-step-content hidden space-y-6 text-center py-6">
+                    <div id="aiGeneratingSpinner" class="space-y-4">
+                        <div class="w-16 h-16 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto"></div>
+                        <h4 class="font-bold text-base text-brand-900 font-serif-custom">AI가 최적의 공부 플랜을 계산 중입니다...</h4>
+                        <p class="text-xs text-gray-500 max-w-sm mx-auto">
+                            에빙하우스 망각곡선 복습 주기와 학원 차감 순공 시간을 결합하여 가장 효율적인 일정을 만들고 있습니다.
+                        </p>
+                    </div>
+
+                    <div id="aiPlanResultPreview" class="hidden space-y-4 text-left bg-brand-50 p-5 rounded-2xl border border-brand-200">
+                        <div class="flex items-center gap-2 text-brand-700 font-bold text-sm border-b border-brand-200 pb-2">
+                            <i class="fa-solid fa-circle-check text-green-600"></i>
+                            <span>AI 맞춤 학습 계획 생성 완료!</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-white p-3 rounded-xl border border-ivory-border">
+                                <span class="text-gray-500 block mb-1">총 예상 순공 시간</span>
+                                <span id="previewTotalHours" class="font-bold text-brand-900 text-sm">24시간</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl border border-ivory-border">
+                                <span class="text-gray-500 block mb-1">배분된 총 공부 세션</span>
+                                <span id="previewSessionCount" class="font-bold text-brand-900 text-sm">18개 세션</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 leading-relaxed">
+                            [확인 및 적용] 버튼을 누르면 메인 화면의 일별 체크리스트와 순공 타이머에 계획이 즉시 등록됩니다.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer Buttons -->
+            <div class="flex items-center justify-between border-t border-brand-100 pt-4 mt-4">
+                <button id="wizardPrevBtn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold disabled:opacity-40" disabled>
+                    이전
+                </button>
+                <button id="wizardNextBtn" class="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                    <span>다음 단계</span>
+                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. GLOBAL STATE & LOCALSTORAGE MANAGEMENT
+        // ==========================================
+        const DEFAULT_QUOTES = [
+            { text: "작심삼일도 열 번 반복하면 한 달이 된다. 며칠 남지 않았을 때가 진짜 시동을 걸 때다.", author: "작심며칠 응원단" },
+            { text: "지금 1시간의 집중이 시험 성적표의 앞자리를 바꾼다.", author: "공부 명언" },
+            { text: "완벽한 계획보다 더 중요한 것은 오늘 할 30분의 실행이다.", author: "습관의 힘" },
+            { text: "수학은 펜을 잡을 때 풀리고, 역사는 눈을 감고 연상할 때 외워진다.", author: "학습 전략가" },
+            { text: "포기하고 싶은 순간이 바로 성장이 일어나는 바로 그 순간이다.", author: "아인슈타인" }
+        ];
+
+        let state = {
+            plan: JSON.parse(localStorage.getItem('jaksim_plan')) || null,
+            timer: {
+                isRunning: false,
+                mode: 'stopwatch', // 'stopwatch' | 'pomodoro'
+                seconds: 0,
+                interval: null,
+                currentSubject: '자율 학습',
+                todayTotalSeconds: parseInt(localStorage.getItem('jaksim_today_total') || '0'),
+                subjectTimes: JSON.parse(localStorage.getItem('jaksim_subject_times')) || {}
+            },
+            currentTabDayIndex: 0,
+            activeWizardStep: 1,
+            audioContext: null,
+            activeSoundSource: null,
+            currentSoundType: null
+        };
+
+        // ==========================================
+        // 2. DOM ELEMENTS
+        // ==========================================
+        const welcomeModal = document.getElementById('welcomeModal');
+        const closeWelcomeBtn = document.getElementById('closeWelcomeBtn');
+        
+        const wizardModal = document.getElementById('wizardModal');
+        const openWizardBtn = document.getElementById('openWizardBtn');
+        const emptyStateWizardBtn = document.getElementById('emptyStateWizardBtn');
+        const closeWizardBtn = document.getElementById('closeWizardBtn');
+        const wizardPrevBtn = document.getElementById('wizardPrevBtn');
+        const wizardNextBtn = document.getElementById('wizardNextBtn');
+        
+        const emptyPlanState = document.getElementById('emptyPlanState');
+        const activePlanState = document.getElementById('activePlanState');
+        const planTitle = document.getElementById('planTitle');
+        const planSummaryBadge = document.getElementById('planSummaryBadge');
+        const dDayTag = document.getElementById('dDayTag');
+        const resetPlanBtn = document.getElementById('resetPlanBtn');
+        
+        const dayTabsContainer = document.getElementById('dayTabsContainer');
+        const currentDayTitle = document.getElementById('currentDayTitle');
+        const currentDaySub = document.getElementById('currentDaySub');
+        const dayProgressPercent = document.getElementById('dayProgressPercent');
+        const dayProgressBar = document.getElementById('dayProgressBar');
+        const taskList = document.getElementById('taskList');
+        const aiAdviceContent = document.getElementById('aiAdviceContent');
+
+        // Timer Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerSubLabel = document.getElementById('timerSubLabel');
+        const timerSubjectSelect = document.getElementById('timerSubjectSelect');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const pauseTimerBtn = document.getElementById('pauseTimerBtn');
+        const resetTimerBtn = document.getElementById('resetTimerBtn');
+        const timerModeStopwatch = document.getElementById('timerModeStopwatch');
+        const timerModePomodoro = document.getElementById('timerModePomodoro');
+        const todayTotalTime = document.getElementById('todayTotalTime');
+        const subjectTimeList = document.getElementById('subjectTimeList');
+
+        // Quote Elements
+        const dailyQuoteText = document.getElementById('dailyQuoteText');
+        const dailyQuoteAuthor = document.getElementById('dailyQuoteAuthor');
+        const refreshQuoteBtn = document.getElementById('refreshQuoteBtn');
+
+        // Sound Elements
+        const soundMenuBtn = document.getElementById('soundMenuBtn');
+        const soundDropdown = document.getElementById('soundDropdown');
+        const soundStatus = document.getElementById('soundStatus');
+        const soundIcon = document.getElementById('soundIcon');
+        const currentSoundLabel = document.getElementById('currentSoundLabel');
+        const volumeControl = document.getElementById('volumeControl');
+        const soundOffBtn = document.getElementById('soundOffBtn');
+
+        // Wizard Input Elements
+        const subjectInputList = document.getElementById('subjectInputList');
+        const addSubjectBtn = document.getElementById('addSubjectBtn');
+        const subjectStyleList = document.getElementById('subjectStyleList');
+
+        // Temporary Wizard Data Store
+        let tempWizardSubjects = [
+            { id: 1, name: '수학', scope: '다항식의 연산 ~ 이차방정식', unitMin: 60, diff: 'high', style: 'problem' },
+            { id: 2, name: '한국사', scope: '삼국시대의 성립과 발전', unitMin: 30, diff: 'mid', style: 'memo' },
+            { id: 3, name: '영어', scope: '3개년 모의고사 기출 20지문', unitMin: 60, diff: 'mid', style: 'concept' }
+        ];
+
+        // ==========================================
+        // 3. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initWelcomeModal();
+            initDailyQuote();
+            initAudioSystem();
+            renderDashboard();
+            updateTimerDisplay();
+            renderSubjectTimeReport();
+        });
+
+        // Welcome Modal Handlers
+        function initWelcomeModal() {
+            closeWelcomeBtn.addEventListener('click', () => {
+                welcomeModal.classList.add('hidden');
+            });
+        }
+
+        // Daily Quote Handlers
+        function initDailyQuote() {
+            setRandomQuote();
+            refreshQuoteBtn.addEventListener('click', setRandomQuote);
+        }
+
+        function setRandomQuote() {
+            const random = DEFAULT_QUOTES[Math.floor(Math.random() * DEFAULT_QUOTES.length)];
+            dailyQuoteText.textContent = `"${random.text}"`;
+            dailyQuoteAuthor.textContent = `— ${random.author}`;
+        }
+
+        // ==========================================
+        // 4. WEB AUDIO API AMBIENT SOUND GENERATOR
+        // ==========================================
+        function initAudioSystem() {
+            soundMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                soundDropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!soundDropdown.contains(e.target) && !soundMenuBtn.contains(e.target)) {
+                    soundDropdown.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.sound-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const soundType = btn.getAttribute('data-sound');
+                    playAmbientSound(soundType);
+                });
+            });
+
+            soundOffBtn.addEventListener('click', stopAmbientSound);
+
+            volumeControl.addEventListener('input', (e) => {
+                if (window.ambientGainNode) {
+                    window.ambientGainNode.gain.value = parseFloat(e.target.value);
+                }
+            });
+        }
+
+        function ensureAudioContext() {
+            if (!state.audioContext) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                state.audioContext = new AudioCtx();
+            }
+            if (state.audioContext.state === 'suspended') {
+                state.audioContext.resume();
+            }
+        }
+
+        function stopAmbientSound() {
+            if (state.activeSoundSource) {
+                try {
+                    state.activeSoundSource.stop();
+                    state.activeSoundSource.disconnect();
+                } catch(e){}
+                state.activeSoundSource = null;
+            }
+            state.currentSoundType = null;
+            soundStatus.textContent = 'OFF';
+            soundStatus.className = 'text-[10px] text-brand-500 font-normal';
+            currentSoundLabel.textContent = '백그라운드 소음';
+            soundIcon.className = 'fa-solid fa-volume-low text-brand-600';
+        }
+
+        function playAmbientSound(type) {
+            ensureAudioContext();
+            stopAmbientSound();
+
+            const ctx = state.audioContext;
+            const bufferSize = ctx.sampleRate * 2; // 2 sec loop buffer
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            // Synthesize audio buffers based on type
+            if (type === 'white') {
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * 0.1;
+                }
+            } else if (type === 'rain') {
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    data[i] = (white * 0.08); // Filtered soft rain
+                }
+            } else if (type === 'fire') {
+                for (let i = 0; i < bufferSize; i++) {
+                    const crackle = Math.random() < 0.002 ? (Math.random() * 0.5) : (Math.random() * 0.03);
+                    data[i] = crackle;
+                }
+            } else if (type === 'cafe' || type === 'music') {
+                // Soft warm chord synthesis
+                for (let i = 0; i < bufferSize; i++) {
+                    const t = i / ctx.sampleRate;
+                    data[i] = (Math.sin(2 * Math.PI * 220 * t) * 0.03) + 
+                              (Math.sin(2 * Math.PI * 329.63 * t) * 0.02) + 
+                              (Math.random() * 0.01);
+                }
+            }
+
+            const noiseNode = ctx.createBufferSource();
+            noiseNode.buffer = buffer;
+            noiseNode.loop = true;
+
+            // Lowpass filter for cozy ambient tone
+            const filter = ctx.createBiquadFilter();
+            filter.type = type === 'white' ? 'highpass' : 'lowpass';
+            filter.frequency.value = type === 'rain' ? 800 : (type === 'fire' ? 1200 : 500);
+
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = parseFloat(volumeControl.value);
+            window.ambientGainNode = gainNode;
+
+            noiseNode.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            noiseNode.start();
+            state.activeSoundSource = noiseNode;
+            state.currentSoundType = type;
+
+            const names = {
+                rain: '잔잔한 빗소리',
+                fire: '따뜻한 장작소리',
+                white: '집중 백색소음',
+                cafe: '아늑한 카페 소리',
+                music: '잔잔한 음악'
+            };
+
+            soundStatus.textContent = 'ON';
+            soundStatus.className = 'text-[10px] text-green-600 font-bold';
+            currentSoundLabel.textContent = names[type] || '재생 중';
+            soundIcon.className = 'fa-solid fa-volume-high text-brand-600 animate-pulse';
+        }
+
+        // ==========================================
+        // 5. WIZARD STEP-BY-STEP MODAL LOGIC
+        // ==========================================
+        openWizardBtn.addEventListener('click', openWizard);
+        emptyStateWizardBtn.addEventListener('click', openWizard);
+        closeWizardBtn.addEventListener('click', closeWizard);
+
+        function openWizard() {
+            state.activeWizardStep = 1;
+            updateWizardStepUI();
+            wizardModal.classList.remove('hidden');
+        }
+
+        function closeWizard() {
+            wizardModal.classList.add('hidden');
+        }
+
+        wizardNextBtn.addEventListener('click', () => {
+            if (state.activeWizardStep === 2) {
+                // Collect step 2 subjects before rendering step 3
+                collectStep2Subjects();
+                renderStep3SubjectStyles();
+            }
+
+            if (state.activeWizardStep === 3) {
+                // Collect step 3 styles and trigger AI planner simulation
+                collectStep3Styles();
+                state.activeWizardStep = 4;
+                updateWizardStepUI();
+                runAIPlannerSimulation();
+                return;
+            }
+
+            if (state.activeWizardStep === 4) {
+                // Apply generated plan
+                applyGeneratedPlan();
+                closeWizard();
+                return;
+            }
+
+            if (state.activeWizardStep < 4) {
+                state.activeWizardStep++;
+                updateWizardStepUI();
+            }
+        });
+
+        wizardPrevBtn.addEventListener('click', () => {
+            if (state.activeWizardStep > 1) {
+                state.activeWizardStep--;
+                updateWizardStepUI();
+            }
+        });
+
+        function updateWizardStepUI() {
+            // Update Step Indicators
+            document.querySelectorAll('.step-indicator').forEach(el => {
+                const step = parseInt(el.getAttribute('data-step'));
+                const circle = el.querySelector('.step-circle');
+                const label = el.querySelector('span');
+
+                if (step === state.activeWizardStep) {
+                    circle.className = 'step-circle w-8 h-8 rounded-full bg-brand-500 text-white font-bold text-xs flex items-center justify-center shadow-md';
+                    label.className = 'text-[10px] text-brand-900 font-bold';
+                } else if (step < state.activeWizardStep) {
+                    circle.className = 'step-circle w-8 h-8 rounded-full bg-brand-200 text-brand-800 font-bold text-xs flex items-center justify-center';
+                    label.className = 'text-[10px] text-brand-700 font-medium';
+                } else {
+                    circle.className = 'step-circle w-8 h-8 rounded-full bg-gray-100 text-gray-400 font-bold text-xs flex items-center justify-center';
+                    label.className = 'text-[10px] text-gray-400 font-medium';
+                }
+            });
+
+            // Toggle step content visibility
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`wizardStep${i}`);
+                if (i === state.activeWizardStep) {
+                    stepEl.classList.remove('hidden');
+                } else {
+                    stepEl.classList.add('hidden');
+                }
+            }
+
+            // Button label updates
+            wizardPrevBtn.disabled = state.activeWizardStep === 1;
+            if (state.activeWizardStep === 3) {
+                wizardNextBtn.innerHTML = `<span>AI 플랜 생성하기</span> <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>`;
+            } else if (state.activeWizardStep === 4) {
+                wizardNextBtn.innerHTML = `<span>확인 및 적용</span> <i class="fa-solid fa-check text-[10px]"></i>`;
+            } else {
+                wizardNextBtn.innerHTML = `<span>다음 단계</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>`;
+            }
+
+            if (state.activeWizardStep === 2) {
+                renderStep2SubjectInputs();
+            }
+        }
+
+        // Render Step 2 Subject Inputs
+        function renderStep2SubjectInputs() {
+            subjectInputList.innerHTML = '';
+            tempWizardSubjects.forEach((sub, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-3.5 border border-ivory-border rounded-xl space-y-2 shadow-xs';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <input type="text" value="${sub.name}" class="sub-name-input bg-brand-50 border border-brand-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-900 w-28 focus:outline-none focus:border-brand-500" placeholder="과목명">
+                        <select class="sub-unit-select bg-brand-50 border border-brand-200 rounded-lg px-2 py-1.5 text-xs text-brand-800 focus:outline-none">
+                            <option value="30" ${sub.unitMin === 30 ? 'selected' : ''}>1회 30분 단위</option>
+                            <option value="60" ${sub.unitMin === 60 ? 'selected' : ''}>1회 1시간 단위</option>
+                            <option value="90" ${sub.unitMin === 90 ? 'selected' : ''}>1회 1시간 30분</option>
+                            <option value="120" ${sub.unitMin === 120 ? 'selected' : ''}>1회 2시간 몰입</option>
+                        </select>
+                        <button class="remove-sub-btn text-red-400 hover:text-red-600 p-1 text-xs" data-index="${idx}">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <input type="text" value="${sub.scope}" class="sub-scope-input w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-700 focus:outline-none focus:border-brand-400" placeholder="시험 범위 / 단원 입력 (예: 1~3단원, 기출 20문제)">
+                `;
+                subjectInputList.appendChild(div);
+            });
+
+            document.querySelectorAll('.remove-sub-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.getAttribute('data-index'));
+                    tempWizardSubjects.splice(idx, 1);
+                    renderStep2SubjectInputs();
+                });
+            });
+        }
+
+        addSubjectBtn.addEventListener('click', () => {
+            tempWizardSubjects.push({
+                id: Date.now(),
+                name: '신규 과목',
+                scope: '시험 범위 입력',
+                unitMin: 60,
+                diff: 'mid',
+                style: 'memo'
+            });
+            renderStep2SubjectInputs();
+        });
+
+        function collectStep2Subjects() {
+            const names = document.querySelectorAll('.sub-name-input');
+            const scopes = document.querySelectorAll('.sub-scope-input');
+            const units = document.querySelectorAll('.sub-unit-select');
+
+            tempWizardSubjects = [];
+            names.forEach((el, idx) => {
+                tempWizardSubjects.push({
+                    id: idx + 1,
+                    name: el.value || `과목 ${idx+1}`,
+                    scope: scopes[idx]?.value || '전 범위',
+                    unitMin: parseInt(units[idx]?.value || '60'),
+                    diff: 'mid',
+                    style: 'memo'
+                });
+            });
+        }
+
+        function renderStep3SubjectStyles() {
+            subjectStyleList.innerHTML = '';
+            tempWizardSubjects.forEach((sub, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 border border-ivory-border rounded-xl space-y-3 shadow-xs';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-brand-100 pb-2">
+                        <span class="font-bold text-xs text-brand-900"><i class="fa-solid fa-book text-brand-500 mr-1"></i> ${sub.name}</span>
+                        <span class="text-[11px] text-gray-500">권장 시간: ${sub.unitMin}분 단위</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-gray-600 mb-1 font-medium">체감 난이도 & 현재 실력</label>
+                            <select class="sub-diff-select w-full bg-brand-50 border border-brand-200 rounded-lg px-2.5 py-1.5 text-brand-900 focus:outline-none" data-index="${idx}">
+                                <option value="high" ${sub.diff === 'high' ? 'selected' : ''}>상 (취약함 / 집중 투자 필요)</option>
+                                <option value="mid" ${sub.diff === 'mid' ? 'selected' : ''}>중 (보통 / 무난함)</option>
+                                <option value="low" ${sub.diff === 'low' ? 'selected' : ''}>하 (자신 있음 / 복습 위주)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 mb-1 font-medium">필요 공부 스타일 분석</label>
+                            <select class="sub-style-select w-full bg-brand-50 border border-brand-200 rounded-lg px-2.5 py-1.5 text-brand-900 focus:outline-none" data-index="${idx}">
+                                <option value="memo" ${sub.style === 'memo' ? 'selected' : ''}>암기 중심 (역사/사탐 - 며칠 분산)</option>
+                                <option value="problem" ${sub.style === 'problem' ? 'selected' : ''}>문제풀이 중심 (수학/이과 - 몰아서 집중)</option>
+                                <option value="concept" ${sub.style === 'concept' ? 'selected' : ''}>개념/지문 이해 (국어/영어 - 균등 배분)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                subjectStyleList.appendChild(div);
+            });
+        }
+
+        function collectStep3Styles() {
+            const diffs = document.querySelectorAll('.sub-diff-select');
+            const styles = document.querySelectorAll('.sub-style-select');
+
+            diffs.forEach((el, idx) => {
+                if (tempWizardSubjects[idx]) {
+                    tempWizardSubjects[idx].diff = el.value;
+                    tempWizardSubjects[idx].style = styles[idx].value;
+                }
+            });
+        }
+
+        // ==========================================
+        // 6. AI PLANNER ALGORITHM & SIMULATION
+        // ==========================================
+        let generatedPlanData = null;
+
+        function runAIPlannerSimulation() {
+            document.getElementById('aiGeneratingSpinner').classList.remove('hidden');
+            document.getElementById('aiPlanResultPreview').classList.add('hidden');
+            wizardNextBtn.disabled = true;
+
+            setTimeout(() => {
+                const totalDays = parseInt(document.getElementById('inputExamDays').value);
+                const weekdayBusy = parseInt(document.getElementById('inputWeekdayBusy').value);
+
+                // Generate Plan Days
+                const days = [];
+                let totalMinSum = 0;
+                let sessionCounter = 0;
+
+                for (let d = 1; d <= totalDays; d++) {
+                    const isWeekend = (d % 6 === 0 || d % 7 === 0);
+                    const availableHours = isWeekend ? 8 : Math.max(2, 8 - weekdayBusy);
+                    
+                    const dayTasks = [];
+                    let remainingMin = availableHours * 60;
+
+                    // Distribute subjects intelligently based on style
+                    tempWizardSubjects.forEach((sub) => {
+                        let shouldAssign = false;
+
+                        // Memory subjects (history/social) -> assign every 2 days for review curve
+                        if (sub.style === 'memo' && (d % 2 === 1 || d === totalDays)) {
+                            shouldAssign = true;
+                        }
+                        // Problem solving (math) -> heavy block allocation
+                        else if (sub.style === 'problem' && (d % 2 === 0 || isWeekend)) {
+                            shouldAssign = true;
+                        }
+                        // Concept (korean/english) -> standard allocation
+                        else if (sub.style === 'concept') {
+                            shouldAssign = true;
+                        }
+
+                        if (shouldAssign && remainingMin >= sub.unitMin) {
+                            sessionCounter++;
+                            totalMinSum += sub.unitMin;
+                            remainingMin -= sub.unitMin;
+
+                            dayTasks.push({
+                                id: `task_${d}_${sessionCounter}`,
+                                subject: sub.name,
+                                scope: sub.scope,
+                                durationMin: sub.unitMin,
+                                type: sub.style === 'memo' ? '암기 & 누적 복습' : (sub.style === 'problem' ? '문제풀이 집중' : '개념 정리 & 회독'),
+                                completed: false
+                            });
+                        }
+                    });
+
+                    // Add review buffer on final days
+                    if (d === totalDays && dayTasks.length === 0) {
+                        dayTasks.push({
+                            id: `task_${d}_review`,
+                            subject: '전 과목',
+                            scope: '시험 직전 최종 오답 노트 & 오답 복습',
+                            durationMin: 120,
+                            type: '최종 점검',
+                            completed: false
+                        });
+                        totalMinSum += 120;
+                        sessionCounter++;
+                    }
+
+                    days.push({
+                        dayNum: d,
+                        title: `DAY ${d} (${d === totalDays ? '시험 직전' : 'D-' + (totalDays - d + 1)})`,
+                        targetMinutes: availableHours * 60 - remainingMin,
+                        tasks: dayTasks
+                    });
+                }
+
+                generatedPlanData = {
+                    title: `${totalDays}일 완성 맞춤 시험 대비 플랜`,
+                    examDays: totalDays,
+                    createdAt: new Date().toISOString(),
+                    days: days,
+                    subjects: tempWizardSubjects
+                };
+
+                // Update Preview UI
+                document.getElementById('aiGeneratingSpinner').classList.add('hidden');
+                document.getElementById('aiPlanResultPreview').classList.remove('hidden');
+                document.getElementById('previewTotalHours').textContent = `${Math.round(totalMinSum / 60)}시간 (${totalMinSum}분)`;
+                document.getElementById('previewSessionCount').textContent = `${sessionCounter}개 학습 세션`;
+
+                wizardNextBtn.disabled = false;
+            }, 1200); // Realistic AI generation delay
+        }
+
+        function applyGeneratedPlan() {
+            state.plan = generatedPlanData;
+            localStorage.setItem('jaksim_plan', JSON.stringify(state.plan));
+            state.currentTabDayIndex = 0;
+            renderDashboard();
+        }
+
+        // ==========================================
+        // 7. DASHBOARD RENDERER & CHECKLIST LOGIC
+        // ==========================================
+        resetPlanBtn.addEventListener('click', () => {
+            if (confirm('정말로 작성된 공부 계획을 초기화하시겠습니까?')) {
+                state.plan = null;
+                localStorage.removeItem('jaksim_plan');
+                renderDashboard();
+            }
+        });
+
+        function renderDashboard() {
+            updateTimerSubjectOptions();
+
+            if (!state.plan || !state.plan.days || state.plan.days.length === 0) {
+                emptyPlanState.classList.remove('hidden');
+                activePlanState.classList.add('hidden');
+                planTitle.textContent = '등록된 공부 계획이 없습니다';
+                planSummaryBadge.classList.add('hidden');
+                return;
+            }
+
+            emptyPlanState.classList.add('hidden');
+            activePlanState.classList.remove('hidden');
+            planTitle.textContent = state.plan.title;
+            planSummaryBadge.classList.remove('hidden');
+            dDayTag.textContent = `D-${state.plan.examDays}`;
+
+            renderDayTabs();
+            renderSelectedDayTasks();
+        }
+
+        function updateTimerSubjectOptions() {
+            timerSubjectSelect.innerHTML = '<option value="자율 학습">자율 학습 / 기타</option>';
+            if (state.plan && state.plan.subjects) {
+                state.plan.subjects.forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub.name;
+                    opt.textContent = `${sub.name} (${sub.style === 'memo' ? '암기' : '문제풀이'})`;
+                    timerSubjectSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function renderDayTabs() {
+            dayTabsContainer.innerHTML = '';
+            state.plan.days.forEach((day, idx) => {
+                const btn = document.createElement('button');
+                const isSelected = idx === state.currentTabDayIndex;
+                btn.className = `px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                    isSelected 
+                    ? 'bg-brand-500 text-white border-brand-500 shadow-xs' 
+                    : 'bg-ivory-card text-brand-800 border-ivory-border hover:bg-brand-100'
+                }`;
+                btn.textContent = day.title;
+                btn.addEventListener('click', () => {
+                    state.currentTabDayIndex = idx;
+                    renderDayTabs();
+                    renderSelectedDayTasks();
+                });
+                dayTabsContainer.appendChild(btn);
+            });
+        }
+
+        function renderSelectedDayTasks() {
+            const currentDay = state.plan.days[state.currentTabDayIndex];
+            if (!currentDay) return;
+
+            currentDayTitle.textContent = `${currentDay.title} 학습 계획`;
+            const hours = (currentDay.targetMinutes / 60).toFixed(1);
+            currentDaySub.textContent = `목표 순공 시간: 약 ${hours}시간 (${currentDay.targetMinutes}분)`;
+
+            // Calculate Progress
+            const totalTasks = currentDay.tasks.length;
+            const completedTasks = currentDay.tasks.filter(t => t.completed).length;
+            const percent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+            dayProgressPercent.textContent = `${percent}%`;
+            dayProgressBar.style.width = `${percent}%`;
+
+            // Render Checklist
+            taskList.innerHTML = '';
+            if (totalTasks === 0) {
+                taskList.innerHTML = `<p class="text-xs text-gray-400 py-4 text-center">이 날은 고정 휴식 또는 자율 복습일입니다.</p>`;
+                return;
+            }
+
+            currentDay.tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = `flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                    task.completed ? 'bg-brand-50/50 border-brand-200 opacity-75' : 'bg-white border-ivory-border hover:border-brand-300'
+                }`;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} class="task-checkbox w-4 h-4 accent-brand-500 rounded cursor-pointer" data-id="${task.id}">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs ${task.completed ? 'line-through text-gray-400' : 'text-brand-900'}">${task.subject}</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-brand-100 text-brand-700 rounded-md font-medium">${task.type}</span>
+                            </div>
+                            <p class="text-[11px] ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'} mt-0.5">${task.scope}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-brand-600 font-mono">${task.durationMin}분</span>
+                        <button class="quick-timer-btn px-2 py-1 bg-brand-100 hover:bg-brand-200 text-brand-800 rounded-lg text-[10px] font-bold" data-subject="${task.subject}">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                `;
+                taskList.appendChild(item);
+            });
+
+            // Checkbox Events
+            document.querySelectorAll('.task-checkbox').forEach(chk => {
+                chk.addEventListener('change', (e) => {
+                    const taskId = e.target.getAttribute('data-id');
+                    const taskObj = currentDay.tasks.find(t => t.id === taskId);
+                    if (taskObj) {
+                        taskObj.completed = e.target.checked;
+                        localStorage.setItem('jaksim_plan', JSON.stringify(state.plan));
+                        renderSelectedDayTasks();
+                    }
+                });
+            });
+
+            // Quick Timer Trigger Events
+            document.querySelectorAll('.quick-timer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const subName = btn.getAttribute('data-subject');
+                    timerSubjectSelect.value = subName;
+                    startTimer();
+                });
+            });
+        }
+
+        // ==========================================
+        // 8. STOPWATCH & POMODORO TIMER SYSTEM
+        // ==========================================
+        startTimerBtn.addEventListener('click', startTimer);
+        pauseTimerBtn.addEventListener('click', pauseTimer);
+        resetTimerBtn.addEventListener('click', resetTimer);
+
+        timerModeStopwatch.addEventListener('click', () => {
+            setTimerMode('stopwatch');
+        });
+        timerModePomodoro.addEventListener('click', () => {
+            setTimerMode('pomodoro');
+        });
+
+        function setTimerMode(mode) {
+            pauseTimer();
+            state.timer.mode = mode;
+            if (mode === 'stopwatch') {
+                timerModeStopwatch.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-brand-800 shadow-xs';
+                timerModePomodoro.className = 'px-2.5 py-1 rounded-md font-semibold text-gray-500 hover:text-brand-800';
+                state.timer.seconds = 0;
+            } else {
+                timerModePomodoro.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-brand-800 shadow-xs';
+                timerModeStopwatch.className = 'px-2.5 py-1 rounded-md font-semibold text-gray-500 hover:text-brand-800';
+                state.timer.seconds = 25 * 60; // 25 Min
+            }
+            updateTimerDisplay();
+        }
+
+        function startTimer() {
+            if (state.timer.isRunning) return;
+            state.timer.isRunning = true;
+            state.timer.currentSubject = timerSubjectSelect.value || '자율 학습';
+
+            startTimerBtn.classList.add('hidden');
+            pauseTimerBtn.classList.remove('hidden');
+            timerSubLabel.textContent = `[${state.timer.currentSubject}] 집중 공부 중...`;
+            timerSubLabel.className = 'text-[11px] text-green-600 mt-2 font-bold animate-pulse';
+
+            state.timer.interval = setInterval(() => {
+                if (state.timer.mode === 'stopwatch') {
+                    state.timer.seconds++;
+                } else {
+                    state.timer.seconds--;
+                    if (state.timer.seconds <= 0) {
+                        pauseTimer();
+                        alert('25분 뽀모도로 집중 시간이 끝났습니다! 5분간 휴식하세요.');
+                        setTimerMode('pomodoro');
+                    }
+                }
+
+                // Increment Cumulative Today Seconds
+                state.timer.todayTotalSeconds++;
+                localStorage.setItem('jaksim_today_total', state.timer.todayTotalSeconds.toString());
+
+                // Increment Subject Time
+                const sub = state.timer.currentSubject;
+                state.timer.subjectTimes[sub] = (state.timer.subjectTimes[sub] || 0) + 1;
+                localStorage.setItem('jaksim_subject_times', JSON.stringify(state.timer.subjectTimes));
+
+                updateTimerDisplay();
+                renderSubjectTimeReport();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            state.timer.isRunning = false;
+            clearInterval(state.timer.interval);
+            startTimerBtn.classList.remove('hidden');
+            pauseTimerBtn.classList.add('hidden');
+            timerSubLabel.textContent = '집중 타이머 일시 정지';
+            timerSubLabel.className = 'text-[11px] text-brand-600 mt-2 font-medium';
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            state.timer.seconds = state.timer.mode === 'stopwatch' ? 0 : 25 * 60;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const secs = state.timer.seconds;
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = secs % 60;
+
+            const pad = (n) => n.toString().padStart(2, '0');
+            timerDisplay.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+            // Render Today Total Time
+            const totSecs = state.timer.todayTotalSeconds;
+            const totH = Math.floor(totSecs / 3600);
+            const totM = Math.floor((totSecs % 3600) / 60);
+            todayTotalTime.textContent = `${totH}시간 ${totM}분`;
+        }
+
+        function renderSubjectTimeReport() {
+            subjectTimeList.innerHTML = '';
+            const times = state.timer.subjectTimes;
+            const keys = Object.keys(times);
+
+            if (keys.length === 0) {
+                subjectTimeList.innerHTML = `<p class="text-gray-400 text-center py-4">기록된 순공 시간이 아직 없습니다.</p>`;
+                return;
+            }
+
+            keys.forEach(sub => {
+                const totalSec = times[sub];
+                const min = Math.floor(totalSec / 60);
+                const hrs = (min / 60).toFixed(1);
+
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2.5 bg-brand-50 rounded-xl border border-brand-100';
+                item.innerHTML = `
+                    <span class="font-semibold text-brand-900">${sub}</span>
+                    <span class="font-mono text-brand-700 font-bold">${min}분 (${hrs}시간)</span>
+                `;
+                subjectTimeList.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
